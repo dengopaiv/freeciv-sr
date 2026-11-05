@@ -803,6 +803,14 @@ static void worklist_load(struct section_file *file, int wlist_max_length,
   worklist_init(pwl);
   pwl->length = secfile_lookup_int_default(file, 0,
                                            "%s.wl_length", path_str);
+  if (pwl->length > MAX_LEN_WORKLIST) {
+    log_sg("worklist length %d, while MAX_LEN_WORKLIST %d.",
+           pwl->length, MAX_LEN_WORKLIST);
+    pwl->length = MAX_LEN_WORKLIST;
+  } else if (pwl->length > wlist_max_length) {
+    log_sg("worklist length %d, while player's max worklist length %d.",
+           pwl->length, wlist_max_length);
+  }
 
   for (i = 0; i < pwl->length; i++) {
     kind = secfile_lookup_str(file, "%s.wl_kind%d", path_str, i);
@@ -3669,6 +3677,10 @@ static void sg_load_player_cities(struct loaddata *loading,
   wlist_max_length = secfile_lookup_int_default(loading->file, 0,
                                                 "player%d.wl_max_length",
                                                 plrno);
+  if (wlist_max_length > MAX_LEN_WORKLIST) {
+    log_sg("wlist_max_length %d over MAX_LEN_WORKLIST (%d)",
+           wlist_max_length, MAX_LEN_WORKLIST);
+  }
 
   /* Load all cities of the player. */
   for (i = 0; i < ncities; i++) {
@@ -4276,11 +4288,17 @@ static bool sg_load_player_unit(struct loaddata *loading,
   sg_warn_ret_val(secfile_lookup_int(loading->file, &punit->fuel,
                                      "%s.fuel", unitstr), FALSE,
                   "%s", secfile_error());
+
   sg_warn_ret_val(secfile_lookup_int(loading->file, &ei,
                                      "%s.activity", unitstr), FALSE,
                   "%s", secfile_error());
-  activity = unit_activity_by_name(loading->activities.order[ei],
-                                   fc_strcasecmp);
+  if (ei >= 0 && ei < loading->activities.size) {
+    activity = unit_activity_by_name(loading->activities.order[ei],
+                                     fc_strcasecmp);
+  } else {
+    log_sg("Invalid activity id for unit %d", punit->id);
+    activity = ACTIVITY_IDLE;
+  }
 
   punit->birth_turn
     = secfile_lookup_int_default(loading->file, game.info.turn,
@@ -5581,7 +5599,7 @@ static void sg_load_sanitycheck(struct loaddata *loading)
     } unit_list_iterate_safe_end;
   } players_iterate_end;
 
-  /* Fix stacking issues.  We don't rely on the savegame preserving
+  /* Fix stacking issues. We don't rely on the savegame preserving
    * alliance invariants (old savegames often did not) so if there are any
    * unallied units on the same tile we just bounce them. */
   players_iterate(pplayer) {
@@ -5621,7 +5639,7 @@ static void sg_load_sanitycheck(struct loaddata *loading)
   /* Check worked tiles map */
 #ifdef FREECIV_DEBUG
   if (loading->worked_tiles != NULL) {
-    /* check the entire map for unused worked tiles */
+    /* Check the entire map for unused worked tiles */
     whole_map_iterate(&(wld.map), ptile) {
       if (loading->worked_tiles[ptile->index] != -1) {
         log_error("[city id: %d] Unused worked tile at (%d, %d).",
@@ -5679,6 +5697,17 @@ static void sg_load_sanitycheck(struct loaddata *loading)
   /* Check max rates (rules may have changed since saving) */
   players_iterate(pplayer) {
     player_limit_to_max_rates(pplayer);
+  } players_iterate_end;
+
+  /* Check initial city sanity */
+  players_iterate(pplayer) {
+    if (!player_has_flag(pplayer, PLRF_FIRST_CITY)
+        && city_list_size(pplayer->cities) > 0) {
+      log_sg(_("%s inconsistency: Has never had their first city, "
+               "but has cities this very moment. Fixing."),
+             player_name(pplayer));
+      BV_SET(pplayer->flags, PLRF_FIRST_CITY);
+    }
   } players_iterate_end;
 
   if (0 == strlen(server.game_identifier)

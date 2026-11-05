@@ -121,7 +121,6 @@ cd build
  CXX="clang++" \
  --enable-debug \
  --enable-sys-lua \
- --enable-sys-tolua-cmd \
  --disable-fcdb \
  --with-qtver=qt6 \
  --enable-client=gtk3.22,qt,sdl2,gtk4,stub \
@@ -168,11 +167,23 @@ emsdk)
   # Outside source tree
   cd ..
 
+  if ! mkdir bin || ! mkdir tolua ; then
+    echo "Failed to create tolua creation dirs!" >&2
+    exit 1
+  fi
+
+  ( cd tolua
+    if ! ${SRCROOT}/scripts/build_tolua.sh ../bin ; then
+      exit 1
+    fi
+  )
+
   if ! ${SRCROOT}/platforms/emscripten/emssetup.sh emsdk ; then
     exit 1
   fi
 )
 
+export PATH="${PATH}:$(cd ../bin; pwd)"
 mkdir build
 cd build
 ../platforms/emscripten/emsbuild.sh "../../emsdk"

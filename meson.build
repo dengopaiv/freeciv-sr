@@ -255,23 +255,11 @@ if meson.is_cross_build()
   cross_inc_path = [cross_inc_str]
   cross_lib_path = [meson.get_external_property('cross_lib_path', '')]
   crosser = meson.get_external_property('crosser', false)
-
-  # emscripten build is always cross-build, so check it only here
-  if c_compiler.compiles(
-'''#ifndef __EMSCRIPTEN__
-  error fail
-#endif''',
-  name: 'emscripten')
-    emscripten = true
-  else
-    emscripten = false
-  endif
 else
   cross_inc_str = ''
   cross_inc_path = []
   cross_lib_path = []
   crosser = false
-  emscripten = false
 endif
 
 if get_option('appimage')
@@ -668,10 +656,11 @@ int main(void) { int *var = nullptr; return 0; }''',
   pub_conf_data.set('FREECIV_HAVE_CXX_NULLPTR', 1)
 endif
 
-if emscripten
+if host_system == 'emscripten'
   icu_dep = []
   zlib_dep = []
   syslua = 'false'
+  ems_suffix = 'html'
 
   priv_conf_data.set('ALWAYS_ROOT', 1)
 
@@ -687,6 +676,8 @@ if emscripten
   add_global_link_arguments(
      emscripten_use_args,
      '-s', 'TOTAL_MEMORY=64MB',
+     '-sSTACK_SIZE=131072',
+     '-sASYNCIFY',
      language : [ 'c', 'cpp'])
 else
   priv_conf_data.set('HAVE_FCDB', 1)
@@ -700,6 +691,8 @@ else
   if syslua != 'false'
     lua_dep_tmp = dependency('lua-5.4', 'lua-54', 'lua54', 'lua5.4', required:false)
   endif
+
+  ems_suffix = []
 endif
 
 # Set unconditionally, as it was checked as hard requirement
@@ -875,7 +868,7 @@ if get_option('audio') == 'sdl2' or get_option('clients').contains('sdl2')
                     c_compiler.find_library('SDL2main', dirs: cross_lib_path),
                     dependency('SDL2')]
   else
-    if emscripten
+    if host_system == 'emscripten'
       emscripten_sdl2_args = [
         '-s', 'USE_SDL=2'
       ]
@@ -907,7 +900,7 @@ if get_option('audio') == 'sdl3' or get_option('clients').contains('sdl3')
     sdl3main_dep = [c_compiler.find_library('mingw32', dirs: cross_lib_path),
                     dependency('sdl3')]
   else
-    if emscripten
+    if host_system == 'emscripten'
       emscripten_sdl3_args = [
         '-s', 'USE_SDL=3'
       ]
@@ -946,10 +939,39 @@ else
   qt_cppflags = ['-std=c++17', '-fPIC']
 endif
 
+if get_option('qtver') == 'qt6'
+  qt_mod = import('qt6')
+
+  qt_dep = dependency('Qt6', modules: ['Core', 'Gui', 'Widgets'], required: false)
+else
+  qt_mod = import('qt5')
+
+  qt_dep = dependency('Qt5', modules: ['Core', 'Gui', 'Widgets'], required: false)
+endif
+
+if cxx_build and get_option('qtver') != 'qt5' and qt_dep.found() and \
+   cxx_compiler.has_argument('-Wno-sfinae-incomplete')
+  if cxx_compiler.compiles(
+'''#include <QtCore>
+int main()
+{
+#if QT_VERSION >= 0x060b00
+  fail
+#endif
+  return 0;
+}
+''',
+    name: 'qt < 6.11',
+    args: [qt_cppflags, '-Wno-sfinae-incomplete'],
+    dependencies: qt_dep)
+    add_global_arguments('-Wno-sfinae-incomplete', language : 'cpp')
+  endif
+endif
+
 if get_option('audio') != 'none'
   priv_conf_data.set('AUDIO_SDL', 1)
 
-  if emscripten
+  if host_system == 'emscripten'
     audio_dep = []
   elif get_option('audio') == 'sdl3'
     audio_sdl3_dep = dependency('sdl3-mixer')
@@ -958,6 +980,7 @@ if get_option('audio') != 'none'
   else
     audio_sdl2_dep = dependency('SDL2_mixer')
     audio_dep = [sdl2main_dep, audio_sdl2_dep]
+    priv_conf_data.set('AUDIO_SDL2', 1)
   endif
 
   audio_sdl_src = 'client/audio_sdl.c'
@@ -994,7 +1017,7 @@ else
   gettext_dep = []
 endif
 
-if emscripten
+if host_system == 'emscripten'
   sqlite3_dep = []
   sqlite3_src = []
   curl_dep = []
@@ -1009,7 +1032,7 @@ else
   m_dep = c_compiler.find_library('m', dirs: cross_lib_path)
 endif
 
-if not emscripten
+if host_system != 'emscripten'
   if c_compiler.compiles(net_incl + '''
 #include <stddef.h>
 #include <curl/curl.h>
@@ -1107,7 +1130,15 @@ foreach manp : man_pages
   man_conf_data.set('DATASUBDIR', '"' + datasubdir + '"')
   configure_file(input : 'doc/man/' + manp + '.6.in',
                  output : manp + '.6',
-                 configuration : man_conf_data)
+                 configuration : man_conf_data,
+                 install_dir: join_paths(get_option('mandir'), 'man6'))
+endforeach
+
+foreach manp : man_links
+  install_data(
+    join_paths('doc/man/', manp + '.6'),
+    install_dir : join_paths(get_option('mandir'), 'man6')
+    )
 endforeach
 
 add_global_arguments('-DHAVE_CONFIG_H',
@@ -3260,20 +3291,6 @@ foreach iconsize : i
                  install_dir : join_paths(get_option('datadir'), 'icons/hicolor', iconsize, 'apps'))
 endforeach
 
-foreach manp : man_pages
-  install_data(
-    join_paths(b_root, manp + '.6'),
-    install_dir : join_paths(get_option('mandir'), 'man6')
-    )
-endforeach
-
-foreach manp : man_links
-  install_data(
-    join_paths('doc/man/', manp + '.6'),
-    install_dir : join_paths(get_option('mandir'), 'man6')
-    )
-endforeach
-
 gtk322_dep = dependency('gtk+-3.0', version : '>= 3.22', required : false)
 gtk4_dep = dependency('gtk4', version : '>= 4.0.0', required : false)
 
@@ -3456,16 +3473,6 @@ custom_target('mi_gtk4',
               install: true,
               install_dir: join_paths(get_option('datadir'), 'metainfo'))
 
-endif
-
-if get_option('qtver') == 'qt6'
-  qt_mod = import('qt6')
-
-  qt_dep = dependency('Qt6', modules: ['Core', 'Gui', 'Widgets'], required: false)
-else
-  qt_mod = import('qt5')
-
-  qt_dep = dependency('Qt5', modules: ['Core', 'Gui', 'Widgets'], required: false)
 endif
 
 if qt_dep.found() and cxx_build
@@ -3746,7 +3753,7 @@ sdl2_gfx_cargs = []
 sdl2_image_dep = []
 sdl2_ttf_dep = []
 
-if not emscripten
+if host_system != 'emscripten'
   sdl2_gfx_dep = dependency('SDL2_gfx', required: false)
 
   if not sdl2_gfx_dep.found()
@@ -3817,6 +3824,7 @@ executable('freeciv-sdl2',
                  sdl2_image_dep, sdl2_gfx_dep, sdl2_ttf_dep,
                  net_dep, gettext_dep, mw_extra_dep],
   link_with: client_common,
+  name_suffix: ems_suffix,
   install: true,
   win_subsystem: 'windows'
   )
@@ -3884,7 +3892,7 @@ sdl3_gfx_cargs = []
 sdl3_image_dep = []
 sdl3_ttf_dep = []
 
-if not emscripten
+if host_system != 'emscripten'
   sdl3_gfx_inc = include_directories('dependencies')
 
   sdl3_image_dep = dependency('sdl3-image', required: false)
@@ -3947,6 +3955,7 @@ executable('freeciv-sdl3',
                  sdl3_image_dep, sdl3_gfx_dep, sdl3_ttf_dep,
                  net_dep, gettext_dep, mw_extra_dep],
   link_with: client_common,
+  name_suffix: ems_suffix,
   install: true,
   win_subsystem: 'windows'
   )

@@ -1960,13 +1960,6 @@ void helptext_unitclass(struct unit_class *pclass, char *buf, size_t bufsz)
     CATLSTR(buf, bufsz, _("  %s Slowed down while damaged.\n"), BULLET);
   }
 
-  if (uclass_has_flag(pclass, UCF_UNREACHABLE)) {
-    CATLSTR(buf, bufsz,
-            /* TRANS: indented unit class property, preserve leading spaces */
-	    _("  %s Is unreachable. Most units cannot attack this one.\n"),
-            BULLET);
-  }
-
   if (uclass_has_flag(pclass, UCF_DOESNT_OCCUPY_TILE)) {
     CATLSTR(buf, bufsz,
             /* TRANS: Indented unit class property, preserve leading spaces */
@@ -2049,12 +2042,17 @@ char *helptext_unit(char *buf, size_t bufsz, struct player *pplayer,
                    BULLET, bonus);
     }
   }
-  if (uclass_has_flag(pclass, UCF_UNREACHABLE)
-      && utype_has_flag(utype, UTYF_NEVER_PROTECTS)) {
+  if (uclass_has_flag(pclass, UCF_UNREACHABLE)) {
     CATLSTR(buf, bufsz,
-            /* TRANS: Indented twice; preserve leading spaces */
-            _("    %s Doesn't prevent enemy units from attacking other "
-              "units on its tile.\n"), BULLET);
+            /* TRANS: indented unit class property, preserve leading spaces */
+	    _("  %s Is unreachable. Most units cannot attack this one.\n"),
+            BULLET);
+    if (utype_has_flag(utype, UTYF_NEVER_PROTECTS)) {
+      CATLSTR(buf, bufsz,
+              /* TRANS: Indented twice; preserve leading spaces */
+              _("    %s Doesn't prevent enemy units from attacking other "
+                "units on its tile.\n"), BULLET);
+    }
   }
 
   if (can_attack_non_native(utype)) {
@@ -3181,14 +3179,14 @@ char *helptext_unit(char *buf, size_t bufsz, struct player *pplayer,
         cat_snprintf(buf, bufsz,
                      /* TRANS: indented unit action property, preserve
                       * leading spaces. */
-                     _("  %s if a suitable hut is at the targetet tile it"
+                     _("  %s if a suitable hut is at the targeted tile it"
                        " will be entered.\n"), BULLET);
       }
       if (BV_ISSET(paction->sub_results, ACT_SUB_RES_HUT_FRIGHTEN)) {
         cat_snprintf(buf, bufsz,
                      /* TRANS: indented unit action property, preserve
                       * leading spaces. */
-                     _("  %s if a suitable hut is at the targetet tile it"
+                     _("  %s if a suitable hut is at the targeted tile it"
                        " will be frightened.\n"), BULLET);
       }
       if (BV_ISSET(paction->sub_results, ACT_SUB_RES_MAY_EMBARK)) {

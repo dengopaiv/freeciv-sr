@@ -2477,7 +2477,7 @@ void kill_unit(struct unit *pkiller, struct unit *punit, bool vet)
     }
 
     /* Remove the units - note the logic of which units actually die
-     * must be mimiced exactly in at least one place up above. */
+     * must be mimicked exactly in at least one place up above. */
     punit = NULL; /* Wiped during following iteration so unsafe to use */
 
     unit_list_iterate_safe(deftile->units, punit2) {
@@ -4960,8 +4960,7 @@ void random_movements(struct player *pplayer)
           struct tile *dest = mapstep(&(wld.map), curtile, dirs[choice]);
 
           if (dest != NULL) {
-            if (action_prob_possible(action_prob_vs_stack(nmap, punit, ACTION_ATTACK,
-                                                          dest))) {
+            if (is_action_enabled_unit_on_stack(nmap, ACTION_ATTACK, punit, dest)) {
               if (unit_perform_action(pplayer, id, tile_index(dest), NO_TARGET,
                                       "", ACTION_ATTACK, ACT_REQ_RULES)) {
                 moved = TRUE;

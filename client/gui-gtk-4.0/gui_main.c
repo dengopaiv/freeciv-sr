@@ -15,7 +15,7 @@
 #include <fc_config.h>
 #endif
 
-#ifdef AUDIO_SDL
+#ifdef AUDIO_SDL2
 /* Though it would happily compile without this include,
  * it is needed for sound to work.
  * It defines "main" macro to rename our main() so that
@@ -25,7 +25,7 @@
 #else  /* PLAIN_INCLUDE */
 #include <SDL2/SDL.h>
 #endif /* PLAIN_INCLUDE */
-#endif /* AUDIO_SDL */
+#endif /* AUDIO_SDL2 */
 
 #ifdef HAVE_LOCALE_H
 #include <locale.h>
@@ -41,7 +41,7 @@
 #endif
 
 #include <gtk/gtk.h>
-#include <gdk/gdkkeysyms.h>
+#include <gdk/gdk.h>
 
 /* utility */
 #include "fc_cmdline.h"
@@ -2260,6 +2260,10 @@ static gboolean show_info_popup(GtkGestureClick *gesture, int n_press,
 **************************************************************************/
 static void end_turn_callback(GtkWidget *w, gpointer data)
 {
+  /* Button going insensitive is going to lose focus. Keep focus at least
+   * within the window */
+  gtk_widget_grab_focus(map_canvas);
+
   gtk_widget_set_sensitive(turn_done_button, FALSE);
   user_ended_turn();
 }
