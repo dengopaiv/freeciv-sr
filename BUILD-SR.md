@@ -3,13 +3,30 @@
 This is the screen-reader-friendly Win32 build of Freeciv. The toolchain is
 **llvm-mingw + vcpkg (x64-mingw-static) + standalone ICU**.
 
+## Prerequisites
+
+- [llvm-mingw](https://github.com/mstorsjo/llvm-mingw), by default at
+  `C:\Qt\Tools\llvm-mingw1706_64`. Set `FREECIV_SR_MINGW` to its `bin` folder
+  if it is elsewhere.
+- [vcpkg](https://github.com/microsoft/vcpkg), found through `VCPKG_ROOT`.
+- [Meson](https://mesonbuild.com) and Python.
+- Git for Windows. Its `sh` and `gzip` are found automatically; set
+  `FREECIV_SR_SH` to use a different folder.
+- Three MSYS2 `mingw64` packages, extracted under `build-deps/mingw-pkgs/` so
+  that each `mingw64` folder sits at the path below. They aren't in the repo
+  because they're large:
+  - `mingw-w64-x86_64-icu` at `icu-extract/mingw64`
+  - `mingw-w64-x86_64-gcc-libs` at `gcc-libs-extract/mingw64`
+  - `mingw-w64-x86_64-libwinpthread` at `winpthread-extract/mingw64`
+- Optional runtime DLLs: see `build-deps/runtime-extras/README.md`.
+
 One script — `build-sr.ps1` — handles every phase of the build. Flags pick
 which phase(s) to run.
 
 ## Quick reference
 
 ```powershell
-# From the repo root: C:\GIT\sodi\freeciv-3.2.4
+# From the repo root
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build-sr.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File .\run-sr.ps1
 ```
@@ -20,8 +37,8 @@ No flags = **compile + stage** (the inner loop you run after every code edit).
 
 | Flag | What it does | When to use |
 |------|--------------|-------------|
-| `-Deps` | `vcpkg install sqlite3 pkgconf` | Once, at first setup. |
-| `-Configure` | Wipe `build-sr/`, `meson setup`. | After adding/removing source files or changing meson options. |
+| `-Deps` | `vcpkg install curl libiconv pkgconf sqlite3 zlib` | Once, at first setup. |
+| `-Configure` | Generate `build-deps/native-mingw.generated.ini`, then rebuild `build-sr/` with `meson setup`. If setup fails, the previous `build-sr/` is restored. | After adding/removing source files, changing meson options, or moving vcpkg. |
 | `-Compile` | `meson compile -C build-sr` + refresh runtime DLLs in `build-sr/`. | After every source edit. |
 | `-Stage` | Copy exe + runtime DLLs into `dist-sr/`. | After compile, before `run-sr.ps1`. |
 | `-Full` | All four, in order. | From-scratch bootstrap. |
@@ -70,7 +87,7 @@ missed a new file, so rerun with `-Configure`.
 ## Smoke test (no-launch sanity check)
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\dist-sr\_run-test.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\smoke-sr.ps1
 ```
 
 Spawns the client, pipes a batch of commands, exits. Should finish in
@@ -81,10 +98,10 @@ Spawns the client, pipes a batch of commands, exits. Should finish in
 Some DLLs live next to the exe but are **not** produced by the build
 and **not** picked up by vcpkg: Dr. MinGW's crash handler
 (`exchndl.dll`, `mgwhelp.dll`) and the NVDA controller client
-(`nvdaControllerClient64.dll`). They're vendored under
+(`nvdaControllerClient64.dll`). They aren't in the repo. Put them in
 `build-deps/runtime-extras/`; `-Compile` copies them into `build-sr/`
 and `-Stage` copies them into `dist-sr/`, so a `meson setup --wipe`
-no longer loses them.
+doesn't lose them.
 
 To refresh: download the latest Dr. MinGW x64 zip from
 <https://github.com/jrfonseca/drmingw/releases> and extract

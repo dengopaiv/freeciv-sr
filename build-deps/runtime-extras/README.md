@@ -4,7 +4,7 @@ DLLs shipped alongside `freeciv-sr.exe` that are **not** produced by the
 build and **not** picked up automatically by `vcpkg` / the toolchain.
 `build-sr.ps1 -Compile` and `build-sr.ps1 -Stage` copy everything in
 this folder into `build-sr/` and `dist-sr/` so the extras survive
-`meson setup --wipe`.
+`meson setup --wipe`. The DLLs themselves aren't committed to the repo.
 
 | File | Source | Purpose |
 |------|--------|---------|

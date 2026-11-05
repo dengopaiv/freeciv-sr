@@ -7,8 +7,9 @@
   build-sr-compile.ps1, build-sr-stage.ps1.
 
   Phases (run in order when combined):
-    -Deps       Install vcpkg packages (sqlite3 pkgconf). One-time setup.
-    -Configure  Wipe build-sr/ and run meson setup.
+    -Deps       Install vcpkg packages. One-time setup.
+    -Configure  Generate the native file and rebuild build-sr/ with meson setup.
+                The previous build-sr/ is restored if setup fails.
     -Compile    meson compile -C build-sr + refresh runtime DLLs in build-sr/.
     -Stage      Copy exe + runtime DLLs into dist-sr/, then validate.
     -Full       All of the above (= -Deps -Configure -Compile -Stage).
@@ -16,9 +17,10 @@
   Default (no flags): -Compile -Stage (the day-to-day inner loop).
 
   Path overrides via environment variables (fall back to defaults):
-    FREECIV_SR_ROOT   repo root       (default: C:\GIT\sodi\freeciv-3.2.4)
+    FREECIV_SR_ROOT   repo root       (default: this script's folder)
     FREECIV_SR_MINGW  llvm-mingw bin  (default: C:\Qt\Tools\llvm-mingw1706_64\bin)
-    VCPKG_ROOT        vcpkg root      (default: C:\GIT\vcpkg)
+    VCPKG_ROOT        vcpkg root      (default: C:\GIT\environment\vcpkg)
+    FREECIV_SR_SH     folder with sh and gzip (default: PATH, then Git for Windows)
 
 .EXAMPLE
   .\build-sr.ps1                    # compile + stage (typical edit/run cycle)
@@ -51,12 +53,12 @@ function Resolve-Required-Path([string]$envVal, [string]$default,
   if (-not (Test-Path $v)) {
     throw "$label not found at '$v'. Set `$env:$envName to override."
   }
-  return $v
+  return $v.TrimEnd('\', '/')
 }
 
-$root         = Resolve-Required-Path $env:FREECIV_SR_ROOT  'C:\GIT\sodi\freeciv-3.2.4'         'FREECIV_SR_ROOT'  'freeciv-sr repo root'
+$root         = Resolve-Required-Path $env:FREECIV_SR_ROOT  $PSScriptRoot                       'FREECIV_SR_ROOT'  'freeciv-sr repo root'
 $mingwBin     = Resolve-Required-Path $env:FREECIV_SR_MINGW 'C:\Qt\Tools\llvm-mingw1706_64\bin' 'FREECIV_SR_MINGW' 'llvm-mingw bin dir'
-$vcpkgRoot    = Resolve-Required-Path $env:VCPKG_ROOT       'C:\GIT\vcpkg'                      'VCPKG_ROOT'       'vcpkg root'
+$vcpkgRoot    = Resolve-Required-Path $env:VCPKG_ROOT       'C:\GIT\environment\vcpkg'          'VCPKG_ROOT'       'vcpkg root'
 
 $build        = Join-Path $root 'build-sr'
 $dist         = Join-Path $root 'dist-sr'
@@ -65,8 +67,39 @@ $icuRoot      = Join-Path $root 'build-deps\mingw-pkgs\icu-extract\mingw64'
 $gccLibs      = Join-Path $root 'build-deps\mingw-pkgs\gcc-libs-extract\mingw64\bin'
 $winpthread   = Join-Path $root 'build-deps\mingw-pkgs\winpthread-extract\mingw64\bin'
 $extras       = Join-Path $root 'build-deps\runtime-extras'
+$nativeIn     = Join-Path $root 'build-deps\native-mingw.ini.in'
+$nativeFile   = Join-Path $root 'build-deps\native-mingw.generated.ini'
 
 Set-Location $root
+
+function Find-ShellToolsDir {
+  # meson.build runs fc_version and its generators through sh, and uses gzip.
+  # Returns the folder to add to PATH, or $null if PATH already has both.
+  if (-not [string]::IsNullOrEmpty($env:FREECIV_SR_SH)) {
+    if (-not (Test-Path (Join-Path $env:FREECIV_SR_SH 'sh.exe'))) {
+      throw "sh.exe not found in FREECIV_SR_SH ('$env:FREECIV_SR_SH')."
+    }
+    return $env:FREECIV_SR_SH
+  }
+  if ((Get-Command sh -ErrorAction SilentlyContinue) -and
+      (Get-Command gzip -ErrorAction SilentlyContinue)) {
+    return $null
+  }
+  $git = Get-Command git -ErrorAction SilentlyContinue
+  if ($git) {
+    $candidate = Join-Path (Split-Path (Split-Path $git.Source)) 'usr\bin'
+    if (Test-Path (Join-Path $candidate 'sh.exe')) { return $candidate }
+  }
+  throw "sh and gzip not found. Install Git for Windows, or set `$env:FREECIV_SR_SH to a folder containing them."
+}
+
+function Write-NativeFile {
+  $text = [IO.File]::ReadAllText($nativeIn).
+    Replace('@VCPKG_TRIPLET@', $vcpkgTriplet.Replace('\', '/')).
+    Replace('@ICU_ROOT@', $icuRoot.Replace('\', '/'))
+  # WriteAllText adds no byte order mark, which could confuse meson's parser.
+  [IO.File]::WriteAllText($nativeFile, $text)
+}
 
 function Initialize-Env {
   # Compose PATH / PKG_CONFIG_PATH used by configure + compile + stage.
@@ -80,6 +113,9 @@ function Initialize-Env {
     throw "icu not extracted at $icuRoot"
   }
   $env:PATH            = "$mingwBin;$vcpkgTriplet\tools\pkgconf;$vcpkgTriplet\bin;$icuRoot\bin;$env:PATH"
+  # Appended last so Git's Unix tools never shadow the compiler toolchain.
+  $shellTools = Find-ShellToolsDir
+  if ($shellTools) { $env:PATH = "$env:PATH;$shellTools" }
   $env:PKG_CONFIG_PATH = "$vcpkgTriplet\lib\pkgconfig;$icuRoot\lib\pkgconfig"
   $env:LIBRARY_PATH    = "$vcpkgTriplet\lib;$icuRoot\lib"
   $env:CPATH           = "$vcpkgTriplet\include;$icuRoot\include"
@@ -123,22 +159,26 @@ function Copy-RuntimeDLLs([string]$target) {
 }
 
 function Invoke-Deps {
-  Write-Host '== [deps] vcpkg install sqlite3 pkgconf =='
+  Write-Host '== [deps] vcpkg install curl libiconv pkgconf sqlite3 zlib =='
   $env:PATH = "$mingwBin;$env:PATH"
   $env:CC  = 'x86_64-w64-mingw32-gcc'
   $env:CXX = 'x86_64-w64-mingw32-g++'
-  & (Join-Path $vcpkgRoot 'vcpkg.exe') install sqlite3 pkgconf --triplet x64-mingw-static
+  & (Join-Path $vcpkgRoot 'vcpkg.exe') install curl libiconv pkgconf sqlite3 zlib --triplet x64-mingw-static
   if ($LASTEXITCODE -ne 0) { throw "vcpkg install failed ($LASTEXITCODE)" }
 }
 
 function Invoke-Configure {
   Write-Host '== [configure] meson setup build-sr =='
-  Remove-Item -Recurse -Force $build -ErrorAction SilentlyContinue
   Initialize-Env
+  Write-NativeFile
+  # Keep the old build until setup succeeds: it may hold the only working exe.
+  $previous = "$build.old"
+  Remove-Item -Recurse -Force $previous -ErrorAction SilentlyContinue
+  if (Test-Path $build) { Rename-Item $build $previous }
   Write-Host "PKG_CONFIG_PATH=$env:PKG_CONFIG_PATH"
   Write-Host "Compiler: $(Get-Command x86_64-w64-mingw32-clang | Select-Object -ExpandProperty Source)"
   meson setup build-sr `
-    --native-file (Join-Path $root 'build-deps\native-mingw.ini') `
+    --native-file $nativeFile `
     -Dclients=sr `
     "-Dfcmp=[]" `
     "-Dtools=[]" `
@@ -147,7 +187,13 @@ function Invoke-Configure {
     -Dreadline=false `
     -Dmwand=false `
     -Dserver=enabled
-  if ($LASTEXITCODE -ne 0) { throw "meson setup failed ($LASTEXITCODE)" }
+  $setupExit = $LASTEXITCODE
+  if ($setupExit -ne 0) {
+    Remove-Item -Recurse -Force $build -ErrorAction SilentlyContinue
+    if (Test-Path $previous) { Rename-Item $previous $build }
+    throw "meson setup failed ($setupExit); previous build-sr restored."
+  }
+  Remove-Item -Recurse -Force $previous -ErrorAction SilentlyContinue
 }
 
 function Invoke-Compile {
@@ -165,8 +211,7 @@ function Assert-Stage-Complete {
     'freeciv-sr.exe',
     'freeciv-sr-tools.exe',
     'freeciv-server.exe',
-    'libfreeciv.dll',
-    'nvdaControllerClient64.dll'
+    'libfreeciv.dll'
   )
   $missing = @()
   foreach ($f in $required) {
@@ -181,6 +226,9 @@ function Assert-Stage-Complete {
     throw "Stage validation failed: $($missing -join '; ')"
   }
   Write-Host ("Stage validation: all {0} required files present." -f $required.Count)
+  if (-not (Test-Path (Join-Path $dist 'nvdaControllerClient64.dll'))) {
+    Write-Warning 'nvdaControllerClient64.dll is missing, so there will be no NVDA speech. See build-deps/runtime-extras/README.md.'
+  }
 }
 
 function Invoke-Stage {

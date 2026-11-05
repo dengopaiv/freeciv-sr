@@ -1,0 +1,22 @@
+# Template for the meson native file. build-sr.ps1 -Configure fills in the
+# placeholders and writes build-deps/native-mingw.generated.ini.
+[binaries]
+c = 'x86_64-w64-mingw32-clang'
+cpp = 'x86_64-w64-mingw32-clang++'
+ar = 'x86_64-w64-mingw32-ar'
+ld = 'ld.lld'
+strip = 'llvm-strip'
+windres = 'x86_64-w64-mingw32-windres'
+pkg-config = 'pkg-config'
+
+[properties]
+needs_exe_wrapper = false
+
+[built-in options]
+# vcpkg's c.find_library doesn't add -I; inject the include dirs explicitly.
+# vcpkg's libiconv 1.19 ships a libcharset.h that uses LIBCHARSET_DLL_EXPORTED
+# without defining it, so define it as empty for that header to compile.
+c_args = ['-DLIBCHARSET_DLL_EXPORTED=', '-I@VCPKG_TRIPLET@/include', '-I@ICU_ROOT@/include']
+cpp_args = ['-DLIBCHARSET_DLL_EXPORTED=', '-I@VCPKG_TRIPLET@/include', '-I@ICU_ROOT@/include']
+c_link_args = ['-L@VCPKG_TRIPLET@/lib', '-L@ICU_ROOT@/lib', '-lcrypt32', '-lsecur32', '-lwldap32', '-lnormaliz', '-liphlpapi', '-lbcrypt', '-ladvapi32', '-luserenv', '-lws2_32', '-lcomctl32', '-luxtheme']
+cpp_link_args = ['-L@VCPKG_TRIPLET@/lib', '-L@ICU_ROOT@/lib', '-lcrypt32', '-lsecur32', '-lwldap32', '-lnormaliz', '-liphlpapi', '-lbcrypt', '-ladvapi32', '-luserenv', '-lws2_32', '-lcomctl32', '-luxtheme']

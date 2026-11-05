@@ -1,5 +1,5 @@
 $ErrorActionPreference = 'Continue'
-$root = 'C:\GIT\sodi\freeciv-3.2.4'
+$root = $PSScriptRoot
 $dist = Join-Path $root 'dist-sr'
 
 $env:FREECIV_DATA_PATH = Join-Path $root 'data'
