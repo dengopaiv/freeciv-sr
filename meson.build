@@ -1282,11 +1282,13 @@ if host_system == 'windows'
   mpicon = windres.process('windows/mpicon.rc')
   rulediticon = windres.process('windows/rulediticon.rc')
   servericon = windres.process('windows/servericon.rc')
+  sricon = windres.process('windows/sricon.rc')
 else
   clienticon = []
   mpicon = []
   rulediticon = []
   servericon = []
+  sricon = []
 endif
 
 common_lib = library('freeciv',
@@ -4044,6 +4046,99 @@ executable('freeciv-stub',
   include_directories: client_inc,
   dependencies: [audio_dep, net_dep, gettext_dep, mw_extra_dep],
   link_with: client_common,
+  install: true,
+  win_subsystem: 'console'
+  )
+
+endif
+
+if get_option('clients').contains('sr')
+
+executable('freeciv-sr',
+  'client/gui_cbsetter.c',
+  'client/gui_interface.c',
+  'client/gui-sr/canvas.c',
+  'client/gui-sr/chatline.c',
+  'client/gui-sr/citydlg.c',
+  'client/gui-sr/cityrep.c',
+  'client/gui-sr/colors.c',
+  'client/gui-sr/connectdlg.c',
+  'client/gui-sr/dialogs.c',
+  'client/gui-sr/diplodlg.c',
+  'client/gui-sr/finddlg.c',
+  'client/gui-sr/gotodlg.c',
+  'client/gui-sr/graphics.c',
+  'client/gui-sr/gui_main.c',
+  'client/gui-sr/helpdlg.c',
+  'client/gui-sr/infradlg.c',
+  'client/gui-sr/inteldlg.c',
+  'client/gui-sr/luaconsole.c',
+  'client/gui-sr/mapctrl.c',
+  'client/gui-sr/mapview.c',
+  'client/gui-sr/menu.c',
+  'client/gui-sr/messagedlg.c',
+  'client/gui-sr/messagewin.c',
+  'client/gui-sr/optiondlg.c',
+  'client/gui-sr/pages.c',
+  'client/gui-sr/plrdlg.c',
+  'client/gui-sr/ratesdlg.c',
+  'client/gui-sr/repodlgs.c',
+  'client/gui-sr/spaceshipdlg.c',
+  'client/gui-sr/sprite.c',
+  'client/gui-sr/sr_audio.c',
+  'client/gui-sr/sr_citizens.c',
+  'client/gui-sr/sr_citydlg.c',
+  'client/gui-sr/sr_citylist.c',
+  'client/gui-sr/sr_cma.c',
+  'client/gui-sr/sr_cmd.c',
+  'client/gui-sr/sr_diplodlg.c',
+  'client/gui-sr/sr_economydlg.c',
+  'client/gui-sr/sr_happiness.c',
+  'client/gui-sr/sr_inteldlg.c',
+  'client/gui-sr/sr_loadgame.c',
+  'client/gui-sr/sr_log.c',
+  'client/gui-sr/sr_mapedit.c',
+  'client/gui-sr/sr_newgame.c',
+  'client/gui-sr/sr_optdlg.c',
+  'client/gui-sr/sr_pick.c',
+  'client/gui-sr/sr_pick_common.c',
+  'client/gui-sr/sr_profile.c',
+  'client/gui-sr/sr_rallypoint.c',
+  'client/gui-sr/sr_sciencedlg.c',
+  'client/gui-sr/sr_treaty.c',
+  'client/gui-sr/sr_treaty_pick.c',
+  'client/gui-sr/sr_unitsdlg.c',
+  'client/gui-sr/sr_notify.c',
+  'client/gui-sr/sr_play.c',
+  'client/gui-sr/sr_sidebar.c',
+  'client/gui-sr/sr_speech.c',
+  'client/gui-sr/sr_status.c',
+  'client/gui-sr/sr_tile.c',
+  'client/gui-sr/sr_tree.c',
+  'client/gui-sr/sr_window.c',
+  'client/gui-sr/themes.c',
+  'client/gui-sr/voteinfo_bar.c',
+  'client/gui-sr/wldlg.c',
+  sricon,
+  include_directories: client_inc,
+  dependencies: [audio_dep, net_dep, gettext_dep, mw_extra_dep],
+  link_with: client_common,
+  install: true,
+  win_subsystem: 'console'
+  )
+
+# Companion utilities binary: random map generator (Phase 5a) plus
+# future SR-side tools. Reuses sr_pick.c + sr_speech.c verbatim and
+# supplies its own minimal sr_window / sr_log stubs in main.c. No
+# client_common link — the tool just spawns freeciv-server.exe headlessly.
+executable('freeciv-sr-tools',
+  'client/gui-sr-tools/main.c',
+  'client/gui-sr-tools/mode_mapgen.c',
+  'client/gui-sr/sr_pick.c',
+  'client/gui-sr/sr_speech.c',
+  sources: [verhdr],
+  include_directories: [client_inc, include_directories('client/gui-sr',
+                                                        'client/gui-sr-tools')],
   install: true,
   win_subsystem: 'console'
   )

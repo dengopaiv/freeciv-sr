@@ -90,6 +90,16 @@ bool server_quitting = FALSE;
 
 static char challenge_fullname[MAX_LEN_PATH];
 static bool client_has_hack = FALSE;
+/* Set to TRUE by client_kill_server_set_in_atexit() to route the
+   shutdown through a hard kill instead of a chat-based soft /quit —
+   the soft path re-enters libfreeciv's mutexes and iconv buffers,
+   which the CRT has already begun tearing down at atexit time. */
+static bool in_atexit = FALSE;
+
+void client_kill_server_set_in_atexit(void)
+{
+  in_atexit = TRUE;
+}
 
 int internal_server_port;
 
@@ -179,7 +189,7 @@ void client_kill_server(bool force)
 #endif /* FREECIV_MSWINDOWS || HAVE_USABLE_FORK */
 
   if (is_server_running()) {
-    if (client.conn.used && client_has_hack) {
+    if (client.conn.used && client_has_hack && !in_atexit) {
       /* This does a "soft" shutdown of the server by sending a /quit.
        *
        * This is useful when closing the client or disconnecting because it
@@ -194,7 +204,7 @@ void client_kill_server(bool force)
        * server.  In this case we don't want to kill it. */
       send_chat("/quit");
       server_quitting = TRUE;
-    } else if (force) {
+    } else if (force || in_atexit) {
       /* Either we already disconnected, or we didn't get control of the
        * server. In either case, the only thing to do is a "hard" kill of
        * the server. */
@@ -293,7 +303,7 @@ bool client_start_server(void)
     return FALSE;
   }
 
-  ruleset = tileset_what_ruleset(tileset);
+  ruleset = tileset != NULL ? tileset_what_ruleset(tileset) : NULL;
 
 #ifdef HAVE_USABLE_FORK
   {
@@ -451,11 +461,27 @@ bool client_start_server(void)
                            NULL,
                            OPEN_ALWAYS, 0, NULL);
   }
+  /* When no --log file was given, capture server output to a local file
+     so the user can inspect it for errors (the server runs detached). */
+  if (loghandle == INVALID_HANDLE_VALUE) {
+    SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
+
+    loghandle = CreateFileA("freeciv-server-debug.log", GENERIC_WRITE,
+                            FILE_SHARE_READ | FILE_SHARE_WRITE,
+                            &sa, CREATE_ALWAYS, 0, NULL);
+  }
 
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
   si.hStdOutput = loghandle;
-  si.hStdInput = INVALID_HANDLE_VALUE;
+  {
+    /* Give the server a valid NUL handle for stdin so it doesn't crash
+       trying to read from INVALID_HANDLE_VALUE. */
+    SECURITY_ATTRIBUTES sa_nul = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
+
+    si.hStdInput = CreateFileA("NUL", GENERIC_READ, 0, &sa_nul,
+                               OPEN_EXISTING, 0, NULL);
+  }
   si.hStdError = loghandle;
   si.dwFlags = STARTF_USESTDHANDLES;
 
@@ -577,6 +603,18 @@ bool client_start_server(void)
   /* A reasonable number of tries */
   while (connect_to_server(user_name, "localhost", internal_server_port,
                            buf, sizeof(buf)) == -1) {
+#ifdef FREECIV_MSWINDOWS
+    /* Pump the Windows message queue so the UI stays responsive while
+       we wait for the server process to start accepting connections. */
+    {
+      MSG msg;
+
+      while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE)) {
+        TranslateMessage(&msg);
+        DispatchMessageW(&msg);
+      }
+    }
+#endif /* FREECIV_MSWINDOWS */
     fc_usleep(WAIT_BETWEEN_TRIES);
 #ifdef HAVE_USABLE_FORK
 #ifndef FREECIV_MSWINDOWS
@@ -625,7 +663,7 @@ bool client_start_server(void)
    *
    * Don't send it now, it will be sent to the server when receiving the
    * server setting infos. */
-  {
+  if (tileset != NULL) {
     char topobuf[16];
     bool iso = FALSE;
     int hh = tileset_hex_height(tileset);

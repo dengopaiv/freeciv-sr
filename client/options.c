@@ -160,6 +160,9 @@ struct client_options gui_options = {
   .sound_effects_volume = 100,
   .silent_when_not_in_focus = FALSE,
 
+  .sr_speak_sound_events = TRUE,
+  .sr_sound_mute_prefixes = "\0",
+
   /* This option is currently set by the client - not by the user. */
   .update_city_text_in_refresh_tile = TRUE,
 
@@ -2411,6 +2414,21 @@ static struct client_option client_options[] = {
                   N_("If this option is enabled, any musicset suggested by "
                      "the ruleset is automatically used."),
                   COC_SOUND, GUI_STUB, FALSE, NULL),
+
+  GEN_BOOL_OPTION(sr_speak_sound_events,
+                  N_("Speak sound events"),
+                  N_("Accessible client: when enabled, every sound effect "
+                     "that fires is also spoken through the screen-reader "
+                     "as a short caption (e.g. \"city built\"). Turn off if "
+                     "the raw sounds are enough."),
+                  COC_SOUND, GUI_STUB, TRUE, NULL),
+  GEN_STR_OPTION(sr_sound_mute_prefixes,
+                 N_("Mute sound tag prefixes"),
+                 N_("Accessible client: comma-separated list of sound-tag "
+                    "prefixes to suppress. Example: \"m_,e_chat_msg\" mutes "
+                    "all unit-move cues and chat-message blips. Empty means "
+                    "no suppression."),
+                 COC_SOUND, GUI_STUB, "", NULL, 0),
 
   GEN_BOOL_OPTION(overview.layers[OLAYER_BACKGROUND],
                   N_("Background layer"),

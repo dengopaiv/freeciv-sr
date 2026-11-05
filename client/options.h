@@ -190,6 +190,11 @@ struct client_options
   int sound_effects_volume;
   bool silent_when_not_in_focus;
 
+  /* gui-sr: speak a caption through sr_say() on every audio_play_sound. */
+  bool sr_speak_sound_events;
+  /* gui-sr: comma-separated list of tag prefixes to suppress (e.g. "m_,e_chat_msg"). */
+  char sr_sound_mute_prefixes[256];
+
   bool draw_city_outlines;
   bool draw_city_output;
   bool draw_map_grid;

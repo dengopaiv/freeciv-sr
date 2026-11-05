@@ -25,6 +25,10 @@ if CLIENT_GUI_STUB
 GUI_SUBDIRS += gui-stub
 endif
 
+if CLIENT_GUI_SR
+GUI_SUBDIRS += gui-sr
+endif
+
 ALL_AUDIO_SDL_FILES = audio_sdl.c audio_sdl.h
 
 if AUDIO_SDL
@@ -250,4 +254,19 @@ freeciv_stub_LDADD = \
  $(INTLLIBS) $(CLIENT_LIBS) $(CLIENTICON) \
  $(TINYCTHR_LIBS) $(MAPIMG_WAND_LIBS) \
  $(gui_stub_libs)
+endif
+
+if CLIENT_GUI_SR
+bin_PROGRAMS += freeciv-sr
+noinst_LTLIBRARIES += libfcgui-sr.la
+libfcgui_sr_la_SOURCES = $(freeciv_client_src)
+libfcgui_sr_la_LIBADD = gui-sr/libgui-sr.la $(clientlibs)
+freeciv_sr_SOURCES = $(gui_interface_src) $(gui_cbs_src)
+freeciv_sr_LDFLAGS = $(gui_sr_ldflags)
+freeciv_sr_LDADD = \
+ libfcgui-sr.la $(SOUND_LIBS) gui-sr/gui_main.lo \
+ $(top_builddir)/common/libfreeciv.la \
+ $(INTLLIBS) $(CLIENT_LIBS) $(CLIENTICON) \
+ $(TINYCTHR_LIBS) $(MAPIMG_WAND_LIBS) \
+ $(gui_sr_libs)
 endif

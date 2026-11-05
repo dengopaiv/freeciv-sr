@@ -523,6 +523,14 @@ static int audio_play_music_tag(const char *tag, bool repeat,
   return audio_play_tag(ms_tagfile, tag, repeat, -1, keep_old_style);
 }
 
+/* Optional pre-play hook; see audio_set_pre_play_cb(). */
+static audio_pre_play_cb pre_play_cb = NULL;
+
+void audio_set_pre_play_cb(audio_pre_play_cb cb)
+{
+  pre_play_cb = cb;
+}
+
 /**********************************************************************//**
   Play an audio sample as suggested by sound tags
 **************************************************************************/
@@ -537,6 +545,13 @@ void audio_play_sound(const char *const tag, const char *const alt_tag,
 
     log_debug("audio_play_sound('%s', '%s', '%s')",
               tag, pretty_alt_tag, pretty_alt2_tag);
+
+    /* Let the accessible client speak captions and enforce mute
+       prefixes. If the hook rejects the tag, skip actual playback
+       but still count the event as handled. */
+    if (pre_play_cb != NULL && !pre_play_cb(tag)) {
+      return;
+    }
 
     /* Try playing primary tag first, if not go to alternative tags */
     if (!audio_play_sound_tag(tag, FALSE)

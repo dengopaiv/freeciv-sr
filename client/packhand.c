@@ -2210,7 +2210,8 @@ void handle_set_topology(int topology_id, int wrap_id)
   wld.map.topology_id = topology_id;
   wld.map.wrap_id = wrap_id;
 
-  if (forced_tileset_name[0] == '\0'
+  if (tileset != NULL
+      && forced_tileset_name[0] == '\0'
       && (tileset_map_topo_compatible(topology_id, tileset, NULL)
           == TOPO_INCOMP_HARD
           || strcmp(tileset_basename(tileset), game.control.preferred_tileset))) {
@@ -2243,7 +2244,8 @@ void handle_map_info(const struct packet_map_info *packet)
   wld.map.north_latitude = packet->north_latitude;
   wld.map.south_latitude = packet->south_latitude;
 
-  if (tileset_map_topo_compatible(packet->topology_id, tileset, &ts_topo) == TOPO_INCOMP_HARD) {
+  if (tileset != NULL
+      && tileset_map_topo_compatible(packet->topology_id, tileset, &ts_topo) == TOPO_INCOMP_HARD) {
     tileset_error(LOG_NORMAL, tileset_name_get(tileset),
                   _("Map topology (%s) and tileset (%s) incompatible."),
                   describe_topology(packet->topology_id), describe_topology(ts_topo));
@@ -3460,7 +3462,7 @@ void handle_ruleset_control(const struct packet_ruleset_control *packet)
     game.ruleset_description[0] = '\0';
   }
 
-  if (packet->preferred_tileset[0] != '\0') {
+  if (tileset != NULL && packet->preferred_tileset[0] != '\0') {
     /* There is tileset suggestion */
     if (strcmp(packet->preferred_tileset, tileset_basename(tileset))) {
       /* It's not currently in use */
@@ -3496,7 +3498,9 @@ void handle_ruleset_control(const struct packet_ruleset_control *packet)
     }
   }
 
-  tileset_ruleset_reset(tileset);
+  if (tileset != NULL) {
+    tileset_ruleset_reset(tileset);
+  }
 
   resend_desired_settable_options();
 }
@@ -3578,7 +3582,9 @@ void handle_rulesets_ready(void)
   editor_ruleset_changed();
 
   /* We are not going to crop any more sprites from big sprites, free them. */
-  finish_loading_sprites(tileset);
+  if (tileset != NULL) {
+    finish_loading_sprites(tileset);
+  }
 
   game.client.ruleset_ready = TRUE;
 }

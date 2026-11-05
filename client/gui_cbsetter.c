@@ -22,10 +22,12 @@
 #include "gui_interface.h"
 
 /* client/include */
+#include "canvas_g.h"
 #include "chatline_g.h"
 #include "citydlg_g.h"
 #include "connectdlg_g.h"
 #include "dialogs_g.h"
+#include "diplodlg_g.h"
 #include "editgui_g.h"
 #include "graphics_g.h"
 #include "gui_main_g.h"
@@ -126,4 +128,15 @@ void setup_gui_funcs(void)
   funcs->get_usable_themes_in_directory = gui_get_usable_themes_in_directory;
 
   funcs->popup_image = gui_popup_image;
+
+  funcs->tileset_type_set = gui_tileset_type_set;
+  funcs->load_gfxnumber = gui_load_gfxnumber;
+  funcs->canvas_put_sprite_full_scaled = gui_canvas_put_sprite_full_scaled;
+  funcs->request_action_confirmation = gui_request_action_confirmation;
+  funcs->gui_init_meeting = gui_gui_init_meeting;
+  funcs->gui_recv_cancel_meeting = gui_gui_recv_cancel_meeting;
+  funcs->gui_prepare_clause_updt = gui_gui_prepare_clause_updt;
+  funcs->gui_recv_create_clause = gui_gui_recv_create_clause;
+  funcs->gui_recv_remove_clause = gui_gui_recv_remove_clause;
+  funcs->gui_recv_accept_treaty = gui_gui_recv_accept_treaty;
 }

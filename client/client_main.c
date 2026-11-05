@@ -227,6 +227,11 @@ static void charsets_init(void)
 **************************************************************************/
 static void emergency_exit(void)
 {
+  /* We are inside an atexit / quick-exit handler. The CRT has begun
+     tearing down statics, so re-entering libfreeciv's vsnprintf mutex
+     and iconv buffers via send_chat("/quit") crashes. Tell the kill
+     routine to go through the hard-terminate path instead. */
+  client_kill_server_set_in_atexit();
   client_kill_server(TRUE);
 }
 

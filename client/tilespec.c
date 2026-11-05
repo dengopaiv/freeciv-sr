@@ -703,6 +703,7 @@ struct tileset *get_tileset(void)
 ****************************************************************************/
 const char *tileset_basename(const struct tileset *t)
 {
+  if (t == NULL) { return NULL; }
   return t->name;
 }
 
@@ -711,6 +712,7 @@ const char *tileset_basename(const struct tileset *t)
 ****************************************************************************/
 bool tileset_is_isometric(const struct tileset *t)
 {
+  if (t == NULL) { return FALSE; }
   return t->type == TS_ISOMETRIC;
 }
 
@@ -720,6 +722,7 @@ bool tileset_is_isometric(const struct tileset *t)
 ****************************************************************************/
 int tileset_hex_width(const struct tileset *t)
 {
+  if (t == NULL) { return 0; }
   return t->hex_width;
 }
 
@@ -729,6 +732,7 @@ int tileset_hex_width(const struct tileset *t)
 ****************************************************************************/
 int tileset_hex_height(const struct tileset *t)
 {
+  if (t == NULL) { return 0; }
   return t->hex_height;
 }
 
@@ -752,6 +756,7 @@ int tileset_hex_height(const struct tileset *t)
 ****************************************************************************/
 int tileset_tile_width(const struct tileset *t)
 {
+  if (t == NULL) { return 1; }
   return t->normal_tile_width;
 }
 
@@ -764,6 +769,7 @@ int tileset_tile_width(const struct tileset *t)
 ****************************************************************************/
 int tileset_tile_height(const struct tileset *t)
 {
+  if (t == NULL) { return 1; }
   return t->normal_tile_height;
 }
 
@@ -775,6 +781,7 @@ int tileset_tile_height(const struct tileset *t)
 ****************************************************************************/
 int tileset_full_tile_width(const struct tileset *t)
 {
+  if (t == NULL) { return 1; }
   return t->full_tile_width;
 }
 
@@ -788,6 +795,7 @@ int tileset_full_tile_width(const struct tileset *t)
 ****************************************************************************/
 int tileset_full_tile_height(const struct tileset *t)
 {
+  if (t == NULL) { return 1; }
   return t->full_tile_height;
 }
 
@@ -796,6 +804,7 @@ int tileset_full_tile_height(const struct tileset *t)
 ****************************************************************************/
 int tileset_unit_width(const struct tileset *t)
 {
+  if (t == NULL) { return 1; }
   return t->unit_tile_width;
 }
 
@@ -804,6 +813,7 @@ int tileset_unit_width(const struct tileset *t)
 ****************************************************************************/
 int tileset_unit_height(const struct tileset *t)
 {
+  if (t == NULL) { return 1; }
   return t->unit_tile_height;
 }
 
@@ -849,6 +859,7 @@ static int calculate_max_upkeep_height(const struct tileset *t)
 ****************************************************************************/
 static int tileset_upkeep_height(const struct tileset *t)
 {
+  if (t == NULL) { return 0; }
   /* Return cached value */
   return t->max_upkeep_height;
 }
@@ -858,10 +869,13 @@ static int tileset_upkeep_height(const struct tileset *t)
 ****************************************************************************/
 int tileset_unit_with_upkeep_height(const struct tileset *t)
 {
-  int uk_bottom = tileset_unit_layout_offset_y(tileset) + tileset_upkeep_height(tileset);
-  int u_bottom = tileset_unit_height(tileset);
+  if (t == NULL) { return 0; }
+  {
+    int uk_bottom = tileset_unit_layout_offset_y(t) + tileset_upkeep_height(t);
+    int u_bottom = tileset_unit_height(t);
 
-  return MAX(uk_bottom, u_bottom);
+    return MAX(uk_bottom, u_bottom);
+  }
 }
 
 /************************************************************************//**
@@ -870,10 +884,13 @@ int tileset_unit_with_upkeep_height(const struct tileset *t)
 ****************************************************************************/
 int tileset_unit_with_small_upkeep_height(const struct tileset *t)
 {
-  int uk_bottom = tileset_unit_layout_small_offset_y(tileset) + tileset_upkeep_height(tileset);
-  int u_bottom = tileset_unit_height(tileset);
+  if (t == NULL) { return 0; }
+  {
+    int uk_bottom = tileset_unit_layout_small_offset_y(t) + tileset_upkeep_height(t);
+    int u_bottom = tileset_unit_height(t);
 
-  return MAX(uk_bottom, u_bottom);
+    return MAX(uk_bottom, u_bottom);
+  }
 }
 
 /************************************************************************//**
@@ -881,6 +898,7 @@ int tileset_unit_with_small_upkeep_height(const struct tileset *t)
 ****************************************************************************/
 int tileset_unit_layout_offset_y(const struct tileset *t)
 {
+  if (t == NULL) { return 0; }
   return t->unit_upkeep_offset_y;
 }
 
@@ -890,6 +908,7 @@ int tileset_unit_layout_offset_y(const struct tileset *t)
 ****************************************************************************/
 int tileset_unit_layout_small_offset_y(const struct tileset *t)
 {
+  if (t == NULL) { return 0; }
   return t->unit_upkeep_small_offset_y;
 }
 
@@ -900,6 +919,7 @@ int tileset_unit_layout_small_offset_y(const struct tileset *t)
 ****************************************************************************/
 int tileset_small_sprite_width(const struct tileset *t)
 {
+  if (t == NULL) { return 1; }
   return t->small_sprite_width;
 }
 
@@ -909,6 +929,7 @@ int tileset_small_sprite_width(const struct tileset *t)
 ****************************************************************************/
 int tileset_citybar_offset_y(const struct tileset *t)
 {
+  if (t == NULL) { return 0; }
   return t->citybar_offset_y;
 }
 
@@ -918,6 +939,7 @@ int tileset_citybar_offset_y(const struct tileset *t)
 ****************************************************************************/
 int tileset_tilelabel_offset_y(const struct tileset *t)
 {
+  if (t == NULL) { return 0; }
   return t->tilelabel_offset_y;
 }
 
@@ -926,7 +948,8 @@ int tileset_tilelabel_offset_y(const struct tileset *t)
 ****************************************************************************/
 float tileset_scale(const struct tileset *t)
 {
-  return tileset->scale;
+  if (t == NULL) { return 1.0f; }
+  return t->scale;
 }
 
 /************************************************************************//**
@@ -936,6 +959,7 @@ float tileset_scale(const struct tileset *t)
 ****************************************************************************/
 int tileset_small_sprite_height(const struct tileset *t)
 {
+  if (t == NULL) { return 1; }
   return t->small_sprite_height;
 }
 
@@ -946,6 +970,7 @@ int tileset_small_sprite_height(const struct tileset *t)
 ****************************************************************************/
 const char *tileset_main_intro_filename(const struct tileset *t)
 {
+  if (t == NULL) { return NULL; }
   return t->main_intro_filename;
 }
 
@@ -954,6 +979,7 @@ const char *tileset_main_intro_filename(const struct tileset *t)
 ****************************************************************************/
 int tileset_num_city_colors(const struct tileset *t)
 {
+  if (t == NULL) { return 0; }
   return t->sprites.city.worked_tile_overlay.size;
 }
 
@@ -962,6 +988,7 @@ int tileset_num_city_colors(const struct tileset *t)
 ****************************************************************************/
 bool tileset_use_hard_coded_fog(const struct tileset *t)
 {
+  if (t == NULL) { return FALSE; }
   return FOG_AUTO == t->fogstyle;
 }
 
@@ -2891,6 +2918,7 @@ static bool sprite_exists(const struct tileset *t, const char *tag_name)
 void tileset_setup_specialist_type_default_set(struct tileset *t,
                                                Specialist_type_id id)
 {
+  if (t == NULL) { return; }
   tileset_setup_specialist_type(t, &t->sprites.default_citizens, id, NULL,
                                 "default set", TRUE);
 }
@@ -3805,6 +3833,7 @@ static bool tileset_setup_unit_type_from_tag(struct tileset *t,
 ****************************************************************************/
 void tileset_setup_unit_type(struct tileset *t, struct unit_type *ut)
 {
+  if (t == NULL) { return; }
   int uidx = utype_index(ut);
 
   if (!tileset_setup_unit_type_from_tag(t, uidx, ut->graphic_str)
@@ -3840,6 +3869,7 @@ void tileset_setup_unit_type(struct tileset *t, struct unit_type *ut)
 void tileset_setup_impr_type(struct tileset *t,
                              struct impr_type *pimprove)
 {
+  if (t == NULL) { return; }
   t->sprites.building[improvement_index(pimprove)]
     = tiles_lookup_sprite_tag_alt(t, LOG_VERBOSE, pimprove->graphic_str,
                                   pimprove->graphic_alt, pimprove->graphic_alt2,
@@ -3856,6 +3886,7 @@ void tileset_setup_impr_type(struct tileset *t,
 void tileset_setup_tech_type(struct tileset *t,
                              struct advance *padvance)
 {
+  if (t == NULL) { return; }
   if (valid_advance(padvance)) {
     t->sprites.tech[advance_index(padvance)]
       = tiles_lookup_sprite_tag_alt(t, LOG_VERBOSE, padvance->graphic_str,
@@ -3875,6 +3906,7 @@ void tileset_setup_tech_type(struct tileset *t,
 void tileset_setup_extra(struct tileset *t,
                          struct extra_type *pextra)
 {
+  if (t == NULL) { return; }
   const int id = extra_index(pextra);
   enum extrastyle_id extrastyle;
 
@@ -4154,6 +4186,7 @@ static void tileset_setup_base(struct tileset *t,
 void tileset_setup_tile_type(struct tileset *t,
                              const struct terrain *pterrain)
 {
+  if (t == NULL) { return; }
   struct drawing_data *draw;
   struct sprite *sprite;
   char buffer[MAX_LEN_NAME + 20];
@@ -4420,6 +4453,7 @@ void tileset_setup_tile_type(struct tileset *t,
 void tileset_setup_government(struct tileset *t,
                               struct government *gov)
 {
+  if (t == NULL) { return; }
   t->sprites.government[government_index(gov)]
     = tiles_lookup_sprite_tag_alt(t, LOG_FATAL, gov->graphic_str,
                                   gov->graphic_alt, NULL, "government",
@@ -4435,6 +4469,7 @@ void tileset_setup_government(struct tileset *t,
 void tileset_setup_nation_flag(struct tileset *t,
                                struct nation_type *nation)
 {
+  if (t == NULL) { return; }
   char *tags[] = {nation->flag_graphic_str,
                   nation->flag_graphic_alt,
                   "unknown", NULL};
@@ -4481,6 +4516,7 @@ static struct sprite *get_unit_nation_flag_sprite(const struct tileset *t,
 {
   struct nation_type *pnation = nation_of_unit(punit);
 
+  if (t == NULL) { return NULL; }
   if (gui_options.draw_unit_shields) {
     return t->sprites.nation_shield.p[nation_index(pnation)];
   } else {
@@ -5831,6 +5867,8 @@ int fill_sprite_array(struct tileset *t,
   struct terrain *pterrain = NULL;
   struct drawn_sprite *save_sprs = sprs;
   struct player *owner = NULL;
+
+  if (t == NULL) { return 0; }
   /* Unit drawing is disabled when the view options are turned off,
    * but only where we're drawing on the mapview. */
   bool do_draw_unit = (punit && (gui_options.draw_units || !ptile
@@ -6464,6 +6502,7 @@ int fill_sprite_array(struct tileset *t,
 ****************************************************************************/
 void tileset_setup_city_tiles(struct tileset *t, int style)
 {
+  if (t == NULL) { return; }
   const char *style_name = city_style_rule_name(style);
 
   if (style == game.control.num_city_styles - 1) {
@@ -6529,11 +6568,10 @@ void tileset_setup_city_tiles(struct tileset *t, int style)
 ****************************************************************************/
 double get_focus_unit_toggle_timeout(const struct tileset *t)
 {
-  if (t->sprites.unit.select[0]) {
-    return 0.1;
-  } else {
+  if (t == NULL || !t->sprites.unit.select[0]) {
     return 0.5;
   }
+  return 0.1;
 }
 
 /************************************************************************//**
@@ -6550,7 +6588,7 @@ void reset_focus_unit_state(struct tileset *t)
 ****************************************************************************/
 void focus_unit_in_combat(struct tileset *t)
 {
-  if (!t->sprites.unit.select[0]) {
+  if (t == NULL || !t->sprites.unit.select[0]) {
     reset_focus_unit_state(t);
   }
 }
@@ -6562,7 +6600,7 @@ void focus_unit_in_combat(struct tileset *t)
 void toggle_focus_unit_state(struct tileset *t)
 {
   focus_unit_state++;
-  if (t->sprites.unit.select[0]) {
+  if (t != NULL && t->sprites.unit.select[0]) {
     focus_unit_state %= NUM_TILES_SELECT;
   } else {
     focus_unit_state %= 2;
@@ -6587,7 +6625,7 @@ struct unit *get_drawable_unit(const struct tileset *t,
   }
 
   if (!unit_is_in_focus(punit)
-      || t->sprites.unit.select[0] || focus_unit_state == 0) {
+      || (t != NULL && t->sprites.unit.select[0]) || focus_unit_state == 0) {
     return punit;
   } else {
     return NULL;
@@ -6702,6 +6740,7 @@ void tileset_free_tiles(struct tileset *t)
 struct sprite *get_spaceship_sprite(const struct tileset *t,
                                     enum spaceship_part part)
 {
+  if (t == NULL) { return NULL; }
   return t->sprites.spaceship[part];
 }
 
@@ -6738,6 +6777,7 @@ struct sprite *get_citizen_sprite(const struct tileset *t,
   const struct citizen_graphic *graphic = NULL;
   int gfx_index = citizen_index;
 
+  if (t == NULL) { return NULL; }
   if (pcity != NULL) {
     int style = style_of_city(pcity);
 
@@ -6767,6 +6807,7 @@ struct sprite *get_citizen_sprite(const struct tileset *t,
 struct sprite *get_nation_flag_sprite(const struct tileset *t,
                                       const struct nation_type *pnation)
 {
+  if (t == NULL) { return NULL; }
   return t->sprites.nation_flag.p[nation_index(pnation)];
 }
 
@@ -6776,6 +6817,7 @@ struct sprite *get_nation_flag_sprite(const struct tileset *t,
 struct sprite *get_nation_shield_sprite(const struct tileset *t,
                                         const struct nation_type *pnation)
 {
+  if (t == NULL) { return NULL; }
   return t->sprites.nation_shield.p[nation_index(pnation)];
 }
 
@@ -6784,6 +6826,7 @@ struct sprite *get_nation_shield_sprite(const struct tileset *t,
 ****************************************************************************/
 struct sprite *get_tech_sprite(const struct tileset *t, Tech_type_id tech)
 {
+  if (t == NULL) { return NULL; }
   fc_assert_ret_val(0 <= tech && tech < advance_count(), NULL);
   return t->sprites.tech[tech];
 }
@@ -6794,6 +6837,7 @@ struct sprite *get_tech_sprite(const struct tileset *t, Tech_type_id tech)
 struct sprite *get_building_sprite(const struct tileset *t,
                                    const struct impr_type *pimprove)
 {
+  if (t == NULL) { return NULL; }
   fc_assert_ret_val(NULL != pimprove, NULL);
   return t->sprites.building[improvement_index(pimprove)];
 }
@@ -6804,6 +6848,7 @@ struct sprite *get_building_sprite(const struct tileset *t,
 struct sprite *get_government_sprite(const struct tileset *t,
                                      const struct government *gov)
 {
+  if (t == NULL) { return NULL; }
   fc_assert_ret_val(NULL != gov, NULL);
   return t->sprites.government[government_index(gov)];
 }
@@ -6821,6 +6866,7 @@ struct sprite *get_unittype_sprite(const struct tileset *t,
   int uidx = utype_index(punittype);
   bool icon = !direction8_is_valid(facing);
 
+  if (t == NULL) { return NULL; }
   if (activity >= ACTIVITY_LAST) {
     activity = ACTIVITY_IDLE;
   }
@@ -6862,7 +6908,10 @@ struct sprite *get_unittype_sprite(const struct tileset *t,
 struct sprite *get_sample_city_sprite(const struct tileset *t,
                                       int style_idx)
 {
-  int num_thresholds =
+  int num_thresholds;
+
+  if (t == NULL) { return NULL; }
+  num_thresholds =
     t->sprites.city.tile->styles[style_idx].land_num_thresholds;
 
   if (num_thresholds == 0) {
@@ -6879,6 +6928,7 @@ struct sprite *get_sample_city_sprite(const struct tileset *t,
 struct sprite *get_arrow_sprite(const struct tileset *t,
                                 enum arrow_type arrow)
 {
+  if (t == NULL) { return NULL; }
   fc_assert_ret_val(arrow >= 0 && arrow < ARROW_LAST, NULL);
 
   return t->sprites.arrow[arrow];
@@ -6889,6 +6939,7 @@ struct sprite *get_arrow_sprite(const struct tileset *t,
 ****************************************************************************/
 struct sprite *get_tax_sprite(const struct tileset *t, Output_type_id otype)
 {
+  if (t == NULL) { return NULL; }
   switch (otype) {
   case O_SCIENCE:
     return t->sprites.tax_science;
@@ -6910,6 +6961,7 @@ struct sprite *get_tax_sprite(const struct tileset *t, Output_type_id otype)
 ****************************************************************************/
 struct sprite *get_event_sprite(const struct tileset *t, enum event_type event)
 {
+  if (t == NULL) { return NULL; }
   return t->sprites.events[event];
 }
 
@@ -6919,6 +6971,7 @@ struct sprite *get_event_sprite(const struct tileset *t, enum event_type event)
 ****************************************************************************/
 struct sprite *get_treaty_thumb_sprite(const struct tileset *t, bool on_off)
 {
+  if (t == NULL) { return NULL; }
   return t->sprites.treaty_thumb[on_off ? 1 : 0];
 }
 
@@ -6929,6 +6982,7 @@ struct sprite *get_treaty_thumb_sprite(const struct tileset *t, bool on_off)
 const struct sprite_vector *get_unit_explode_animation(const struct
                                                        tileset *t)
 {
+  if (t == NULL) { return NULL; }
   return &t->sprites.explode.unit;
 }
 
@@ -6939,6 +6993,7 @@ const struct sprite_vector *get_unit_explode_animation(const struct
 ****************************************************************************/
 struct sprite *get_nuke_explode_sprite(const struct tileset *t)
 {
+  if (t == NULL) { return NULL; }
   return t->sprites.explode.nuke;
 }
 
@@ -6947,6 +7002,7 @@ struct sprite *get_nuke_explode_sprite(const struct tileset *t)
 ****************************************************************************/
 const struct citybar_sprites *get_citybar_sprites(const struct tileset *t)
 {
+  if (t == NULL) { return NULL; }
   if (gui_options.draw_full_citybar) {
     return &t->sprites.citybar;
   } else {
@@ -6959,6 +7015,7 @@ const struct citybar_sprites *get_citybar_sprites(const struct tileset *t)
 ****************************************************************************/
 const struct editor_sprites *get_editor_sprites(const struct tileset *t)
 {
+  if (t == NULL) { return NULL; }
   return &t->sprites.editor;
 }
 
@@ -6972,6 +7029,7 @@ struct sprite *get_cursor_sprite(const struct tileset *t,
                                  enum cursor_type cursor,
                                  int *hot_x, int *hot_y, int frame)
 {
+  if (t == NULL) { *hot_x = 0; *hot_y = 0; return NULL; }
   *hot_x = t->sprites.cursor[cursor].hot_x;
   *hot_y = t->sprites.cursor[cursor].hot_y;
 
@@ -6989,6 +7047,7 @@ struct sprite *get_cursor_sprite(const struct tileset *t,
 ****************************************************************************/
 struct sprite *get_icon_sprite(const struct tileset *t, enum icon_type icon)
 {
+  if (t == NULL) { return NULL; }
   return t->sprites.icon[icon];
 }
 
@@ -7000,6 +7059,7 @@ struct sprite *get_icon_sprite(const struct tileset *t, enum icon_type icon)
 ****************************************************************************/
 struct sprite *get_attention_crosshair_sprite(const struct tileset *t)
 {
+  if (t == NULL) { return NULL; }
   return t->sprites.user.attention;
 }
 
@@ -7011,6 +7071,7 @@ struct sprite *get_indicator_sprite(const struct tileset *t,
                                     enum indicator_type indicator,
                                     int idx)
 {
+  if (t == NULL) { return NULL; }
   idx = CLIP(0, idx, NUM_TILES_PROGRESS - 1);
 
   fc_assert_ret_val(indicator >= 0 && indicator < INDICATOR_COUNT, NULL);
@@ -7030,6 +7091,7 @@ struct sprite *get_unit_unhappy_sprite(const struct tileset *t,
 {
   const int unhappy = CLIP(0, happy_cost, MAX_NUM_UPKEEP_SPRITES+1);
 
+  if (t == NULL) { return NULL; }
   if (unhappy > 0) {
     return t->sprites.upkeep.unhappy[unhappy - 1];
   } else {
@@ -7050,6 +7112,7 @@ struct sprite *get_unit_upkeep_sprite(const struct tileset *t,
 {
   const int upkeep = CLIP(0, upkeep_cost[otype], MAX_NUM_UPKEEP_SPRITES + 1);
 
+  if (t == NULL) { return NULL; }
   if (upkeep > 0) {
     return t->sprites.upkeep.output[otype][upkeep - 1];
   } else {
@@ -7063,6 +7126,7 @@ struct sprite *get_unit_upkeep_sprite(const struct tileset *t,
 ****************************************************************************/
 struct sprite *get_basic_fog_sprite(const struct tileset *t)
 {
+  if (t == NULL) { return NULL; }
   return t->sprites.tx.fog;
 }
 
@@ -7071,6 +7135,7 @@ struct sprite *get_basic_fog_sprite(const struct tileset *t)
 ****************************************************************************/
 struct color_system *get_color_system(const struct tileset *t)
 {
+  if (t == NULL) { return NULL; }
   return t->color_system;
 }
 
@@ -7079,6 +7144,7 @@ struct color_system *get_color_system(const struct tileset *t)
 ****************************************************************************/
 void tileset_use_preferred_theme(const struct tileset *t)
 {
+  if (t == NULL) { return; }
   char *default_theme_name = NULL;
   size_t default_theme_name_sz = 0;
   int i;
@@ -7329,6 +7395,7 @@ int fill_basic_base_sprite_array(const struct tileset *t,
 ****************************************************************************/
 enum mapview_layer tileset_get_layer(const struct tileset *t, int n)
 {
+  if (t == NULL) { return (enum mapview_layer)0; }
   fc_assert(n < LAYER_COUNT);
   return t->layer_order[n];
 }
@@ -7381,6 +7448,7 @@ bool tileset_layer_in_category(enum mapview_layer layer,
 ****************************************************************************/
 void tileset_player_init(struct tileset *t, struct player *pplayer)
 {
+  if (t == NULL) { return; }
   int plrid, i, j;
   struct sprite *color;
 
@@ -7461,6 +7529,7 @@ static void tileset_player_free(struct tileset *t, int plrid)
 ****************************************************************************/
 void tileset_background_init(struct tileset *t)
 {
+  if (t == NULL) { return; }
   /* Free all data before recreating it. */
   tileset_background_free(t);
 
@@ -7532,6 +7601,7 @@ bool tileset_is_fully_loaded(void)
 ****************************************************************************/
 const char *tileset_name_get(struct tileset *t)
 {
+  if (t == NULL) { return NULL; }
   return t->given_name;
 }
 
@@ -7540,6 +7610,7 @@ const char *tileset_name_get(struct tileset *t)
 ****************************************************************************/
 const char *tileset_version(struct tileset *t)
 {
+  if (t == NULL) { return NULL; }
   return t->version;
 }
 
@@ -7548,6 +7619,7 @@ const char *tileset_version(struct tileset *t)
 ****************************************************************************/
 const char *tileset_summary(struct tileset *t)
 {
+  if (t == NULL) { return NULL; }
   return t->summary;
 }
 
@@ -7556,6 +7628,7 @@ const char *tileset_summary(struct tileset *t)
 ****************************************************************************/
 const char *tileset_description(struct tileset *t)
 {
+  if (t == NULL) { return NULL; }
   return t->description;
 }
 
@@ -7564,6 +7637,7 @@ const char *tileset_description(struct tileset *t)
 ****************************************************************************/
 char *tileset_what_ruleset(struct tileset *t)
 {
+  if (t == NULL) { return NULL; }
   return t->for_ruleset;
 }
 
@@ -7572,6 +7646,7 @@ char *tileset_what_ruleset(struct tileset *t)
 ****************************************************************************/
 int tileset_topo_index(struct tileset *t)
 {
+  if (t == NULL) { return 0; }
   return t->ts_topo_idx;
 }
 
@@ -7580,6 +7655,7 @@ int tileset_topo_index(struct tileset *t)
 ****************************************************************************/
 int tileset_svg_flag_height(struct tileset *t)
 {
+  if (t == NULL) { return 0; }
   return t->svg_height;
 }
 

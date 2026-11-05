@@ -906,9 +906,35 @@ const struct strvec *get_data_dirs(void)
                 PATH_SEPARATOR
                 "%s/usr/share/freeciv",
                 getenv("APPDIR"));
-#else  /* FREECIV_APPIMAGE */
+#elif defined(FREECIV_MSWINDOWS)
+    /* On Windows, also look for a "data" directory next to or one level
+       above the executable so the build directory layout works without
+       requiring FREECIV_DATA_PATH to be set. */
+    char default_data_path[MAX_PATH + 200];
+    {
+      char exedir[MAX_PATH];
+      DWORD len = GetModuleFileNameA(NULL, exedir, sizeof(exedir));
+
+      if (len > 0 && len < sizeof(exedir)) {
+        /* Strip the executable name to get the directory. */
+        char *sep = strrchr(exedir, '\\');
+
+        if (sep == NULL) { sep = strrchr(exedir, '/'); }
+        if (sep != NULL) { *sep = '\0'; }
+
+        fc_snprintf(default_data_path, sizeof(default_data_path),
+                    "%s" PATH_SEPARATOR            /* exe dir itself      */
+                    "%s\\data" PATH_SEPARATOR       /* exe-dir/data        */
+                    "%s\\..\\data" PATH_SEPARATOR   /* exe-dir/../data     */
+                    DEFAULT_DATA_PATH,              /* compiled-in default */
+                    exedir, exedir, exedir);
+      } else {
+        sz_strlcpy(default_data_path, DEFAULT_DATA_PATH);
+      }
+    }
+#else  /* !FREECIV_APPIMAGE && !FREECIV_MSWINDOWS */
 #define default_data_path DEFAULT_DATA_PATH
-#endif /* FREECIV_APPIMAGE */
+#endif /* FREECIV_APPIMAGE / FREECIV_MSWINDOWS */
 
     if ((path = getenv(FREECIV_DATA_PATH)) && '\0' == path[0]) {
       /* TRANS: <FREECIV_DATA_PATH> configuration error */

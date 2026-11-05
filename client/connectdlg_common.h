@@ -22,6 +22,11 @@ extern "C" {
 
 bool client_start_server(void);
 void client_kill_server(bool force);
+/* Tell client_kill_server() we are in an atexit context — it must skip
+   the soft send_chat("/quit") path, since the CRT has begun tearing
+   down statics (vsnprintf mutex, iconv buffers) and re-entering them
+   crashes. */
+void client_kill_server_set_in_atexit(void);
 
 bool is_server_running(void);
 bool can_client_access_hack(void);

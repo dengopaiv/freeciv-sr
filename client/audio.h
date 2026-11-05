@@ -82,6 +82,13 @@ const char *audio_get_all_plugin_names(void);
 
 bool audio_is_dummy_plugin(void);
 
+/* Optional pre-play callback. If set, audio_play_sound() invokes it
+   with the primary tag and skips normal playback when the callback
+   returns FALSE. Used by gui-sr to speak captions (T3) and to suppress
+   muted tag prefixes (T5). A NULL cb clears the hook. */
+typedef bool (*audio_pre_play_cb)(const char *tag);
+void audio_set_pre_play_cb(audio_pre_play_cb cb);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

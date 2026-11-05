@@ -1046,6 +1046,9 @@ void boot_help_texts(void)
             }
             break;
           case HELP_TILESET:
+            if (tileset == NULL) {
+              break; /* No tileset loaded (e.g. screen-reader client). */
+            }
             {
               int desc_len;
               int len;

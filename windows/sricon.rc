@@ -1,0 +1,9 @@
+#include <windows.h>
+
+/* Client icon — reused from the standard freeciv icon set. */
+1 ICON "client.ico"
+
+/* Application manifest: declare Common Controls v6, DPI awareness, and
+   long-path awareness. Common Controls v6 is required for SysTreeView32
+   to expose modern MSAA/UIA properties that NVDA reads fully. */
+1 24 "sricon.manifest"

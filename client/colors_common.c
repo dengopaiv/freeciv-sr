@@ -97,11 +97,22 @@ struct color *ensure_color(struct rgbcolor *rgb)
 /************************************************************************//**
   Return a pointer to the given "standard" color.
 ****************************************************************************/
+/* Fallback color used when there is no tileset / color system (e.g. the
+   screen-reader client). Allocated on first use and never freed. */
+static struct rgbcolor *fallback_rgb = NULL;
+
 struct color *get_color(const struct tileset *t, enum color_std stdcolor)
 {
   struct color_system *colors = get_color_system(t);
 
-  fc_assert_ret_val(colors != NULL, NULL);
+  if (colors == NULL) {
+    /* No tileset loaded — return an opaque black placeholder so callers
+       that dereference the result don't crash. */
+    if (fallback_rgb == NULL) {
+      fallback_rgb = rgbcolor_new(0, 0, 0);
+    }
+    return ensure_color(fallback_rgb);
+  }
 
   return ensure_color(*(colors->stdcolors + stdcolor));
 }

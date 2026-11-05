@@ -442,7 +442,7 @@ dnl auto: Autodetect one.
 dnl all:  Autodetect as many as possible.
 dnl comma-separated-list: Detect these or abort.
 AC_ARG_ENABLE([client],
-  AS_HELP_STRING([--enable-client=auto/all/gtk3.22/sdl2/qt/gtk4/stub],
+  AS_HELP_STRING([--enable-client=auto/all/gtk3.22/sdl2/qt/gtk4/stub/sr],
                  [clients to compile [auto](list for multiple)]),
 [clients=${enableval}],
 [client=auto])
@@ -456,6 +456,7 @@ gui_gtk4=no
 gui_sdl2=no
 gui_qt=no
 gui_stub=no
+gui_sr=no
 
 for gui in $(echo $clients | $SED 's/,/ /g') ; do
   if test "x$gui" = "xno" ; then
@@ -1059,6 +1060,15 @@ if test "x$client" != "xno"; then
     gui_stub_libs="-lm"
   fi
 
+  dnl Screen-reader (gui-sr) specific overrides
+  if test "x$gui_sr" = "xyes" || test "x$client" = "xall" ; then
+    gui_sr=yes
+    if test "x$client" = "xauto" ; then
+      client=yes
+    fi
+    gui_sr_libs="-lm"
+  fi
+
   dnl If client still "auto", error out since we couldn't select any of them
   if test "x$client" = "xauto" ; then
     AC_MSG_ERROR([can not build any of the supported clients])
@@ -1070,7 +1080,8 @@ if test "x$client" = "xall" ; then
      test "x$gui_gtk4" = "xyes" ||
      test "x$gui_sdl2" = "xyes" ||
      test "x$gui_qt" = "xyes" ||
-     test "x$gui_stub" = "xyes" ; then
+     test "x$gui_stub" = "xyes" ||
+     test "x$gui_sr" = "xyes" ; then
     client=yes
   else
     client=no
@@ -1395,6 +1406,9 @@ AC_SUBST([gui_qt_ldflags])
 AC_SUBST([gui_stub_cflags])
 AC_SUBST([gui_stub_libs])
 AC_SUBST([gui_stub_ldflags])
+AC_SUBST([gui_sr_cflags])
+AC_SUBST([gui_sr_libs])
+AC_SUBST([gui_sr_ldflags])
 AC_SUBST([mp_cli_cflags])
 AC_SUBST([mp_cli_libs])
 AC_SUBST([mp_cli_ldflags])
@@ -1422,6 +1436,7 @@ AM_CONDITIONAL(CLIENT_GUI_GTK_3_22, test "x$gui_gtk3_22" = "xyes")
 AM_CONDITIONAL(CLIENT_GUI_GTK_4, test "x$gui_gtk4" = "xyes")
 AM_CONDITIONAL(CLIENT_GUI_QT, test "x$gui_qt" = "xyes")
 AM_CONDITIONAL(CLIENT_GUI_STUB, test "x$gui_stub" = "xyes")
+AM_CONDITIONAL(CLIENT_GUI_SR, test "x$gui_sr" = "xyes")
 AM_CONDITIONAL(MINGW, test x"$MINGW" = "xyes")
 
 dnl Additional client libraries:
@@ -1887,6 +1902,7 @@ AC_CONFIG_FILES([Makefile
           client/gui-gtk-4.0/Makefile
           client/gui-qt/Makefile
           client/gui-stub/Makefile
+          client/gui-sr/Makefile
           client/luascript/Makefile
 	  server/Makefile
           server/advisors/Makefile
@@ -1969,6 +1985,7 @@ AC_MSG_NOTICE([
     QT:      $gui_qt
     SDL2:    $gui_sdl2
     Stub:    $gui_stub
+    SR:      $gui_sr
 
   == Server ==
   Build freeciv server:  $server

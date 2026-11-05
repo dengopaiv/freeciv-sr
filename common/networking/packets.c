@@ -528,9 +528,9 @@ void *get_packet_from_connection_raw(struct connection *pc,
 
   if (utype.type >= PACKET_LAST
       || (receive_handler = pc->phs.handlers->receive[utype.type]) == NULL) {
-    log_verbose("Received unsupported packet type %d (%s). The connection "
-                "will be closed now.",
-                utype.type, packet_name(utype.type));
+    log_error("Received unsupported packet type %d (%s). The connection "
+              "will be closed now.",
+              utype.type, packet_name(utype.type));
     connection_close(pc, _("unsupported packet type"));
     return NULL;
   }

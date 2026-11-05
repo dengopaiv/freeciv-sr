@@ -36,3 +36,18 @@
 /core
 /libtool
 /freeciv-CI.log
+
+# freeciv-sr: local build outputs, downloaded toolchain parts and scratch files
+/build-sr/
+/build-sr.old/
+/dist-sr/
+/build-deps/mingw-pkgs/
+/build-deps/lib/
+/build-deps/runtime-extras/*.dll
+/build-deps/native-mingw.generated.ini
+/sounds/
+/codes.txt
+/.claude/
+/freeciv-server-debug.log
+/dependencies/lua-5.4/src/dist-stamp
+/dependencies/tolua-5.2/src/lib/dist-stamp
